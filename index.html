@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>R&J 四人踩台同步工具</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --panel-2: #1f2937;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #22c55e;
+      --danger: #ef4444;
+      --warn: #f59e0b;
+      --border: #334155;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
+      background: linear-gradient(180deg, #020617 0%, #0f172a 100%);
+      color: var(--text);
+    }
+    .wrap {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .card {
+      background: rgba(17,24,39,.92);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 20px 40px rgba(0,0,0,.25);
+      backdrop-filter: blur(8px);
+    }
+    h1,h2,h3,p { margin: 0; }
+    .top {
+      display: grid;
+      gap: 16px;
+    }
+    .title p { margin-top: 8px; color: var(--muted); line-height: 1.5; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+    @media (max-width: 720px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+    label {
+      display: block;
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    input {
+      width: 100%;
+      padding: 14px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #0b1220;
+      color: var(--text);
+      font-size: 16px;
+    }
+    .buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    button {
+      border: none;
+      border-radius: 12px;
+      padding: 13px 16px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .primary { background: var(--accent); color: #052e16; }
+    .secondary { background: #334155; color: white; }
+    .danger { background: var(--danger); color: white; }
+    .ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+    .status {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: #0b1220;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .section { margin-top: 18px; }
+    .slots {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+    @media (max-width: 640px) {
+      .slots { grid-template-columns: 1fr; }
+    }
+    .slot {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      background: #0b1220;
+    }
+    .slot .head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      background: #1e293b;
+      border: 1px solid var(--border);
+      color: white;
+      font-weight: 800;
+    }
+    .name {
+      font-size: 20px;
+      font-weight: 800;
+    }
+    .muted { color: var(--muted); }
+    .pill {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #1f2937;
+      border: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .platform-buttons {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .platform-btn {
+      padding: 18px 0;
+      font-size: 20px;
+      border-radius: 16px;
+      background: #1f2937;
+      color: white;
+      border: 1px solid var(--border);
+      font-weight: 900;
+    }
+    .platform-btn.active {
+      background: var(--accent);
+      color: #052e16;
+      border-color: #4ade80;
+    }
+    .platform-btn.blocked {
+      background: #3f3f46;
+      color: #a1a1aa;
+      cursor: not-allowed;
+      opacity: .65;
+    }
+    .tips {
+      line-height: 1.7;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    code {
+      background: #020617;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 2px 6px;
+      color: #e2e8f0;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card top">
+      <div class="title">
+        <h1>R&J 四人踩台同步工具</h1>
+        <p>4 個人打開同一個網址，輸入同一個房號後，就能即時看到誰站 1、2、3、4 平台。平台已被選走時會自動鎖住，避免撞位。</p>
+      </div>
+
+      <div class="grid">
+        <div>
+          <label for="roomCode">房號</label>
+          <input id="roomCode" placeholder="例如：RJ-0318" maxlength="24" />
+        </div>
+        <div>
+          <label for="playerName">你的名稱</label>
+          <input id="playerName" placeholder="例如：彬 / 主教 / 夜使" maxlength="20" />
+        </div>
+      </div>
+
+      <div class="buttons">
+        <button id="joinBtn" class="primary">加入房間</button>
+        <button id="copyBtn" class="secondary">複製分享連結</button>
+        <button id="leaveBtn" class="ghost">離開房間</button>
+        <button id="resetBtn" class="danger">重置全部平台</button>
+      </div>
+
+      <div id="status" class="status">尚未連線。</div>
+    </div>
+
+    <div class="card section">
+      <h2>目前分配</h2>
+      <div id="slots" class="slots"></div>
+    </div>
+
+    <div class="card section">
+      <h2>我要選的平台</h2>
+      <div id="platformButtons" class="platform-buttons"></div>
+      <p class="pill" id="myChoice">尚未選擇平台</p>
+    </div>
+
+    <div class="card section">
+      <h2>使用說明</h2>
+      <div class="tips">
+        1. 先到 Firebase 建立一個專案，開啟 <strong>Realtime Database</strong>。<br>
+        2. 把下方 <code>firebaseConfig</code> 換成你自己的設定。Firebase 官方文件說明可以在 Web 端初始化 App，並對資料節點做即時監聽與寫入。citeturn402804search0turn402804search4<br>
+        3. 這份頁面用的是 Firebase 的 CDN module 方式，官方文件也有提供這種替代安裝方式。citeturn402804search4<br>
+        4. 每個房間會寫到 <code>rooms/{房號}</code>，四個平台的資料會即時同步到所有人畫面。Firebase 的 Web 讀寫文件指出，監聽器會先收到初始狀態，之後資料一變更就再次觸發。citeturn402804search0
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+    import {
+      getDatabase,
+      ref,
+      get,
+      set,
+      update,
+      onValue,
+      off,
+      remove,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-database.js";
+
+    // TODO: 換成你自己的 Firebase 設定
+    const firebaseConfig = {
+      apiKey: "PASTE_YOUR_API_KEY",
+      authDomain: "PASTE_YOUR_PROJECT.firebaseapp.com",
+      databaseURL: "https://PASTE_YOUR_PROJECT-default-rtdb.firebaseio.com",
+      projectId: "PASTE_YOUR_PROJECT",
+      storageBucket: "PASTE_YOUR_PROJECT.firebasestorage.app",
+      messagingSenderId: "PASTE_YOUR_SENDER_ID",
+      appId: "PASTE_YOUR_APP_ID"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const roomInput = document.getElementById('roomCode');
+    const nameInput = document.getElementById('playerName');
+    const joinBtn = document.getElementById('joinBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const leaveBtn = document.getElementById('leaveBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const statusEl = document.getElementById('status');
+    const slotsEl = document.getElementById('slots');
+    const platformButtonsEl = document.getElementById('platformButtons');
+    const myChoiceEl = document.getElementById('myChoice');
+
+    const deviceId = getOrCreateDeviceId();
+    let currentRoom = '';
+    let currentName = '';
+    let roomRef = null;
+    let unsubscribed = false;
+    let roomState = emptyState();
+
+    const qs = new URLSearchParams(location.search);
+    if (qs.get('room')) roomInput.value = qs.get('room');
+    if (localStorage.getItem('rj_name')) nameInput.value = localStorage.getItem('rj_name');
+
+    renderSlots();
+    renderPlatformButtons();
+
+    joinBtn.addEventListener('click', joinRoom);
+    copyBtn.addEventListener('click', copyShareLink);
+    leaveBtn.addEventListener('click', leaveRoom);
+    resetBtn.addEventListener('click', resetPlatforms);
+
+    async function joinRoom() {
+      const roomCode = normalizeRoom(roomInput.value);
+      const playerName = nameInput.value.trim();
+
+      if (!roomCode) return setStatus('請先輸入房號。', 'warn');
+      if (!playerName) return setStatus('請先輸入你的名稱。', 'warn');
+
+      currentRoom = roomCode;
+      currentName = playerName;
+      localStorage.setItem('rj_name', currentName);
+      history.replaceState({}, '', `${location.pathname}?room=${encodeURIComponent(currentRoom)}`);
+
+      if (roomRef && !unsubscribed) off(roomRef);
+      roomRef = ref(db, `rooms/${currentRoom}`);
+      unsubscribed = false;
+
+      const snapshot = await get(roomRef);
+      const data = snapshot.val() || emptyState();
+
+      // 清理同裝置舊紀錄，避免換名字時殘留
+      for (const key of ['1', '2', '3', '4']) {
+        if (data.platforms?.[key]?.deviceId === deviceId) {
+          data.platforms[key] = null;
+        }
+      }
+
+      await update(roomRef, {
+        updatedAt: Date.now(),
+        players: {
+          ...(data.players || {}),
+          [deviceId]: { name: currentName, joinedAt: Date.now(), room: currentRoom }
+        },
+        platforms: data.platforms || { '1': null, '2': null, '3': null, '4': null }
+      });
+
+      onValue(roomRef, (snap) => {
+        roomState = snap.val() || emptyState();
+        renderSlots();
+        renderPlatformButtons();
+        const choice = getMyPlatform();
+        myChoiceEl.textContent = choice ? `你目前站在：平台 ${choice}` : '尚未選擇平台';
+        setStatus(`已連線到房間 ${currentRoom}，共 ${Object.keys(roomState.players || {}).length} 人在線。`, 'ok');
+      });
+    }
+
+    async function choosePlatform(platform) {
+      if (!currentRoom || !roomRef) return setStatus('請先加入房間。', 'warn');
+      const owner = roomState.platforms?.[platform];
+      if (owner && owner.deviceId !== deviceId) return;
+
+      const updates = {};
+      for (const key of ['1', '2', '3', '4']) {
+        const item = roomState.platforms?.[key];
+        if (item?.deviceId === deviceId) updates[`platforms/${key}`] = null;
+      }
+      updates[`platforms/${platform}`] = {
+        deviceId,
+        name: currentName,
+        selectedAt: Date.now()
+      };
+      updates.updatedAt = Date.now();
+      await update(roomRef, updates);
+    }
+
+    async function resetPlatforms() {
+      if (!currentRoom || !roomRef) return setStatus('請先加入房間。', 'warn');
+      await update(roomRef, {
+        platforms: { '1': null, '2': null, '3': null, '4': null },
+        updatedAt: Date.now()
+      });
+      setStatus('已重置所有平台。', 'ok');
+    }
+
+    async function leaveRoom() {
+      if (!currentRoom || !roomRef) return setStatus('目前沒有加入房間。');
+      const updates = { [`players/${deviceId}`]: null, updatedAt: Date.now() };
+      for (const key of ['1', '2', '3', '4']) {
+        if (roomState.platforms?.[key]?.deviceId === deviceId) updates[`platforms/${key}`] = null;
+      }
+      await update(roomRef, updates);
+      off(roomRef);
+      unsubscribed = true;
+      currentRoom = '';
+      roomRef = null;
+      roomState = emptyState();
+      renderSlots();
+      renderPlatformButtons();
+      myChoiceEl.textContent = '尚未選擇平台';
+      setStatus('已離開房間。');
+    }
+
+    async function copyShareLink() {
+      const roomCode = normalizeRoom(roomInput.value);
+      if (!roomCode) return setStatus('先輸入房號後才能複製連結。', 'warn');
+      const url = `${location.origin}${location.pathname}?room=${encodeURIComponent(roomCode)}`;
+      await navigator.clipboard.writeText(url);
+      setStatus('分享連結已複製。', 'ok');
+    }
+
+    function renderSlots() {
+      const platforms = roomState.platforms || { '1': null, '2': null, '3': null, '4': null };
+      slotsEl.innerHTML = ['1','2','3','4'].map(key => {
+        const item = platforms[key];
+        const me = item?.deviceId === deviceId;
+        return `
+          <div class="slot">
+            <div class="head">
+              <div class="badge">${key}</div>
+              <div class="muted">平台 ${key}</div>
+            </div>
+            <div class="name">${item?.name || '尚未有人'}</div>
+            <div class="pill">${item ? (me ? '你目前站這裡' : '已被佔用') : '可選擇'}</div>
+          </div>`;
+      }).join('');
+    }
+
+    function renderPlatformButtons() {
+      const myPlatform = getMyPlatform();
+      const platforms = roomState.platforms || {};
+      platformButtonsEl.innerHTML = ['1','2','3','4'].map(key => {
+        const item = platforms[key];
+        const active = myPlatform === key;
+        const blocked = item && item.deviceId !== deviceId;
+        return `<button class="platform-btn ${active ? 'active' : ''} ${blocked ? 'blocked' : ''}" ${blocked ? 'disabled' : ''} data-platform="${key}">${key}</button>`;
+      }).join('');
+      platformButtonsEl.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', () => choosePlatform(btn.dataset.platform));
+      });
+    }
+
+    function getMyPlatform() {
+      for (const key of ['1','2','3','4']) {
+        if (roomState.platforms?.[key]?.deviceId === deviceId) return key;
+      }
+      return '';
+    }
+
+    function normalizeRoom(value) {
+      return value.trim().toUpperCase().replace(/[^A-Z0-9-_]/g, '').slice(0, 24);
+    }
+
+    function emptyState() {
+      return { players: {}, platforms: { '1': null, '2': null, '3': null, '4': null } };
+    }
+
+    function setStatus(msg, type = 'normal') {
+      statusEl.textContent = msg;
+      statusEl.style.border = '1px solid var(--border)';
+      if (type === 'ok') statusEl.style.border = '1px solid rgba(34,197,94,.5)';
+      else if (type === 'warn') statusEl.style.border = '1px solid rgba(245,158,11,.5)';
+      else statusEl.style.border = '1px solid var(--border)';
+    }
+
+    function getOrCreateDeviceId() {
+      let id = localStorage.getItem('rj_device_id');
+      if (!id) {
+        id = crypto.randomUUID();
+        localStorage.setItem('rj_device_id', id);
+      }
+      return id;
+    }
+
+    window.addEventListener('beforeunload', async () => {
+      if (!roomRef || !currentRoom) return;
+      const updates = { [`players/${deviceId}`]: null, updatedAt: Date.now() };
+      for (const key of ['1', '2', '3', '4']) {
+        if (roomState.platforms?.[key]?.deviceId === deviceId) updates[`platforms/${key}`] = null;
+      }
+      try { await update(roomRef, updates); } catch {}
+    });
+  </script>
+</body>
+</html>
