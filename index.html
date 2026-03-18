@@ -294,7 +294,6 @@
       getDatabase,
       ref,
       get,
-      set,
       update,
       onValue,
       onDisconnect,
@@ -333,7 +332,7 @@
     let myName = "";
     let roomState = buildEmptyRoomState();
     let roomRef = null;
-    let listening = false;
+    let unsubscribeRoom = null;
 
     const qs = new URLSearchParams(location.search);
     if (qs.get("room")) roomInput.value = qs.get("room");
@@ -378,32 +377,28 @@
         }
       });
 
-      await runTransaction(ref(db, `rooms/${roomCode}/hostId`), (current) => {
-        return current || myId;
-      });
+      await runTransaction(ref(db, `rooms/${roomCode}/hostId`), (current) => current || myId);
 
       await setupDisconnectCleanup();
 
-      if (!listening) {
-        onValue(roomRef, async (snap) => {
-          roomState = snap.val() || buildEmptyRoomState();
-
-          const players = roomState.players || {};
-          const currentHostId = roomState.hostId || "";
-
-          if (currentHostId && !players[currentHostId]) {
-            const nextHostId = Object.keys(players).sort()[0] || null;
-            if (nextHostId) {
-              await update(roomRef, { hostId: nextHostId });
-            } else {
-              await update(roomRef, { hostId: null });
-            }
-          }
-
-          render();
-        });
-        listening = true;
+      if (unsubscribeRoom) {
+        unsubscribeRoom();
       }
+
+      unsubscribeRoom = onValue(roomRef, async (snap) => {
+        roomState = snap.val() || buildEmptyRoomState();
+
+        const players = roomState.players || {};
+        const currentHostId = roomState.hostId || "";
+
+        if (currentHostId && !players[currentHostId]) {
+          const nextHostId = Object.keys(players).sort()[0] || null;
+          await update(roomRef, { hostId: nextHostId });
+          return;
+        }
+
+        render();
+      });
 
       setStatus("已連線");
     }
@@ -415,7 +410,12 @@
 
       for (let floor = 1; floor <= FLOOR_COUNT; floor++) {
         for (let platform = 1; platform <= PLATFORM_COUNT; platform++) {
-          await onDisconnect(ref(db, `rooms/${roomCode}/floors/${floor}/${platform}`)).remove();
+          const slotRef = ref(db, `rooms/${roomCode}/floors/${floor}/${platform}`);
+          const slotSnap = await get(slotRef);
+          const slotValue = slotSnap.val();
+          if (slotValue && slotValue.id === myId) {
+            await onDisconnect(slotRef).remove();
+          }
         }
       }
 
@@ -449,6 +449,9 @@
       };
 
       await update(roomRef, updates);
+
+      const pickedRef = ref(db, `rooms/${roomCode}/floors/${floor}/${platform}`);
+      await onDisconnect(pickedRef).remove();
     }
 
     async function resetAllFloors() {
@@ -462,9 +465,17 @@
         return;
       }
 
+      const ok = confirm("確定要重置全部樓層嗎？此操作會清空 1 到 10 層所有平台分配。");
+      if (!ok) {
+        setStatus("已取消重置");
+        return;
+      }
+
       await update(roomRef, {
         floors: buildEmptyFloors()
       });
+
+      setStatus("已重置全部樓層");
     }
 
     async function leaveRoom() {
@@ -493,12 +504,16 @@
 
       await update(roomRef, updates);
 
+      if (unsubscribeRoom) {
+        unsubscribeRoom();
+        unsubscribeRoom = null;
+      }
+
       roomCode = "";
       roomRef = null;
       roomState = buildEmptyRoomState();
-      listening = false;
-      setStatus("已離開房間");
       render();
+      setStatus("已離開房間");
     }
 
     async function copyLink() {
@@ -540,6 +555,7 @@
     function renderResetButton() {
       if (!roomRef) {
         resetBtn.classList.add("btn-disabled");
+        resetBtn.textContent = "重置全部樓層";
         return;
       }
 
