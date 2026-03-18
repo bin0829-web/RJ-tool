@@ -19,10 +19,16 @@ body {
   padding: 20px;
 }
 
+label {
+  display:block;
+  margin-top:10px;
+  font-weight:bold;
+}
+
 input, button {
   width: 100%;
   padding: 12px;
-  margin-top: 10px;
+  margin-top: 5px;
   border-radius: 10px;
   border: none;
   font-size: 16px;
@@ -49,7 +55,7 @@ button { cursor: pointer; }
 
 .platform-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr); /* 🔥 永遠一排 */
+  grid-template-columns: repeat(4, 1fr);
   gap: 8px;
   margin-top: 10px;
 }
@@ -63,14 +69,16 @@ button { cursor: pointer; }
   font-weight: bold;
 }
 
+/* 自己 */
 .active {
   background: #22c55e !important;
   color: black;
 }
 
+/* 被別人選 */
 .blocked {
-  background: #444;
-  color: #aaa;
+  background: #ef4444 !important;
+  color: white;
 }
 </style>
 </head>
@@ -80,8 +88,11 @@ button { cursor: pointer; }
 
 <h2>R&J 十層踩台同步工具</h2>
 
-<input id="room" placeholder="房號">
-<input id="name" placeholder="你的名字">
+<label>房號：</label>
+<input id="room" placeholder="輸入房號">
+
+<label>名稱：</label>
+<input id="name" placeholder="輸入名稱">
 
 <button class="primary" onclick="join()">加入房間</button>
 <button class="danger" onclick="resetAll()">重置全部樓層</button>
@@ -121,34 +132,36 @@ localStorage.setItem("id", myId);
 
 let state = {};
 let name = "";
+let currentRoom = "";
 
 window.join = async function () {
-  const room = document.getElementById("room").value;
+  currentRoom = document.getElementById("room").value;
   name = document.getElementById("name").value;
 
-  if (!room || !name) return;
+  if (!currentRoom || !name) return;
 
-  roomRef = ref(db, "rooms/" + room);
+  roomRef = ref(db, "rooms/" + currentRoom);
 
   const snap = await get(roomRef);
-  const data = snap.val() || { floors: buildEmpty() };
+  const data = snap.val() || { floors: buildEmpty(), players:{} };
 
   await update(roomRef, {
-    floors: data.floors || buildEmpty()
+    floors: data.floors || buildEmpty(),
+    players: {
+      ...(data.players || {}),
+      [myId]: name
+    }
   });
 
   onValue(roomRef, (snap) => {
     state = snap.val() || {};
     render();
   });
-
-  document.getElementById("status").innerText = "已連線";
 };
 
 window.pick = function (floor, platform) {
   const updates = {};
 
-  // 清掉該層自己的舊位置
   for (let i = 1; i <= 4; i++) {
     if (state.floors?.[floor]?.[i]?.id === myId) {
       updates[`floors/${floor}/${i}`] = null;
@@ -195,6 +208,13 @@ function render() {
   }
 
   document.getElementById("floors").innerHTML = html;
+
+  // 🔥 顯示在線玩家
+  const players = state.players || {};
+  const names = Object.values(players);
+
+  document.getElementById("status").innerText =
+    names.length ? "已連線：" + names.join("、") : "尚未連線";
 }
 
 function buildEmpty() {
