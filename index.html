@@ -3,133 +3,526 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>R&J 四人踩台同步工具</title>
-
+  <title>R&J 十層踩台同步工具</title>
   <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --panel-2: #1f2937;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #22c55e;
+      --danger: #ef4444;
+      --border: #334155;
+      --activeText: #052e16;
+    }
+
+    * { box-sizing: border-box; }
+
     body {
       margin: 0;
-      font-family: -apple-system, sans-serif;
-      background: #0f172a;
-      color: white;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
+      background: linear-gradient(180deg, #020617 0%, #0f172a 100%);
+      color: var(--text);
     }
-    .wrap { max-width: 600px; margin: auto; padding: 20px; }
-    input, button {
+
+    .wrap {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .card {
+      background: rgba(17, 24, 39, 0.95);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+      margin-bottom: 18px;
+      box-shadow: 0 20px 40px rgba(0,0,0,.25);
+    }
+
+    h1, h2, h3, p {
+      margin: 0;
+    }
+
+    .title p {
+      margin-top: 8px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    @media (max-width: 720px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    input {
       width: 100%;
-      padding: 12px;
-      margin-top: 10px;
-      border-radius: 10px;
-      border: none;
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #0b1220;
+      color: var(--text);
       font-size: 16px;
     }
-    button { cursor: pointer; }
-    .primary { background: #22c55e; }
-    .danger { background: #ef4444; }
-    .slot {
-      border: 1px solid #334155;
-      padding: 12px;
-      margin-top: 10px;
-      border-radius: 10px;
+
+    .buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
     }
-    .btn-group { display: grid; grid-template-columns: repeat(4,1fr); gap:10px; margin-top:15px;}
-    .btn-group button { background:#1f2937; color:white;}
-    .active { background:#22c55e !important; color:black;}
+
+    button {
+      border: none;
+      border-radius: 12px;
+      padding: 13px 16px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .primary { background: var(--accent); color: var(--activeText); }
+    .secondary { background: #334155; color: white; }
+    .danger { background: var(--danger); color: white; }
+    .ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+
+    .status {
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: #0b1220;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+      border: 1px solid var(--border);
+    }
+
+    .floors {
+      display: grid;
+      gap: 14px;
+      margin-top: 16px;
+    }
+
+    .floor {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px;
+      background: #0b1220;
+    }
+
+    .floor-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .floor-title {
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .floor-note {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .platform-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    @media (max-width: 640px) {
+      .platform-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    .platform-btn {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 10px;
+      background: #1f2937;
+      color: white;
+      text-align: center;
+      min-height: 90px;
+    }
+
+    .platform-btn.active {
+      background: var(--accent);
+      color: var(--activeText);
+      border-color: #4ade80;
+    }
+
+    .platform-btn.blocked {
+      background: #3f3f46;
+      color: #a1a1aa;
+      cursor: not-allowed;
+      opacity: .75;
+    }
+
+    .platform-num {
+      font-size: 24px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .platform-name {
+      margin-top: 8px;
+      font-size: 13px;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+
+    .legend {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #1f2937;
+      border: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--muted);
+    }
   </style>
 </head>
-
 <body>
-<div class="wrap">
+  <div class="wrap">
+    <div class="card">
+      <div class="title">
+        <h1>R&J 十層踩台同步工具</h1>
+        <p>共 10 層，每層 4 個平台。每位玩家在同一層只能選 1 個平台，但可以在不同層各選 1 次。</p>
+      </div>
 
-<h2>R&J 四人踩台同步工具</h2>
+      <div class="grid">
+        <div>
+          <label for="roomCode">房號</label>
+          <input id="roomCode" placeholder="例如：RJ-0318" maxlength="24" />
+        </div>
+        <div>
+          <label for="playerName">你的名稱</label>
+          <input id="playerName" placeholder="例如：彬 / 主教 / 夜使" maxlength="20" />
+        </div>
+      </div>
 
-<input id="room" placeholder="房號">
-<input id="name" placeholder="你的名字">
+      <div class="buttons">
+        <button id="joinBtn" class="primary">加入房間</button>
+        <button id="copyBtn" class="secondary">複製分享連結</button>
+        <button id="leaveBtn" class="ghost">離開房間</button>
+        <button id="resetBtn" class="danger">重置全部樓層</button>
+      </div>
 
-<button class="primary" onclick="join()">加入</button>
-<button class="danger" onclick="reset()">重置</button>
+      <div class="legend">
+        <span class="pill">綠色：你目前選的位置</span>
+        <span class="pill">灰色：已被其他人選走</span>
+        <span class="pill">同一層只會保留你最後選的 1 個平台</span>
+      </div>
 
-<div id="status"></div>
+      <div id="status" class="status">尚未連線。</div>
+    </div>
 
-<h3>平台</h3>
-<div class="btn-group">
-  <button onclick="pick(1)">1</button>
-  <button onclick="pick(2)">2</button>
-  <button onclick="pick(3)">3</button>
-  <button onclick="pick(4)">4</button>
-</div>
+    <div class="card">
+      <h2>十層平台分配</h2>
+      <div id="floors" class="floors"></div>
+    </div>
+  </div>
 
-<div id="slots"></div>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+    import {
+      getDatabase,
+      ref,
+      get,
+      update,
+      onValue,
+      off
+    } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-database.js";
 
-</div>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDD5QvkwC4O73Slaj4pWYpPAnzcnpGn7l8",
+      authDomain: "rj-tool.firebaseapp.com",
+      databaseURL: "https://rj-tool-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "rj-tool",
+      storageBucket: "rj-tool.firebasestorage.app",
+      messagingSenderId: "330515008066",
+      appId: "1:330515008066:web:870b8118832bc7197fbbdb"
+    };
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
-import {
-  getDatabase,
-  ref,
-  update,
-  onValue
-} from "https://www.gstatic.com/firebasejs/11.0.0/firebase-database.js";
+    const FLOOR_COUNT = 10;
+    const PLATFORM_COUNT = 4;
 
-const firebaseConfig = {
-  apiKey: "AIzaSyDD5QvkwC4O73Slaj4pWYpPAnzcnpGn7l8",
-  authDomain: "rj-tool.firebaseapp.com",
-  databaseURL: "https://rj-tool-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "rj-tool",
-  storageBucket: "rj-tool.firebasestorage.app",
-  messagingSenderId: "330515008066",
-  appId: "1:330515008066:web:870b8118832bc7197fbbdb"
-};
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+    const roomInput = document.getElementById("roomCode");
+    const nameInput = document.getElementById("playerName");
+    const joinBtn = document.getElementById("joinBtn");
+    const copyBtn = document.getElementById("copyBtn");
+    const leaveBtn = document.getElementById("leaveBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const statusEl = document.getElementById("status");
+    const floorsEl = document.getElementById("floors");
 
-let room = "";
-let name = "";
-let myId = localStorage.getItem("id") || crypto.randomUUID();
-localStorage.setItem("id", myId);
+    const deviceId = getOrCreateDeviceId();
 
-let roomRef;
+    let currentRoom = "";
+    let currentName = "";
+    let roomRef = null;
+    let roomState = emptyState();
 
-window.join = function () {
-  room = document.getElementById("room").value;
-  name = document.getElementById("name").value;
+    const qs = new URLSearchParams(location.search);
+    if (qs.get("room")) roomInput.value = qs.get("room");
+    if (localStorage.getItem("rj_name")) nameInput.value = localStorage.getItem("rj_name");
 
-  roomRef = ref(db, "rooms/" + room);
+    joinBtn.addEventListener("click", joinRoom);
+    copyBtn.addEventListener("click", copyShareLink);
+    leaveBtn.addEventListener("click", leaveRoom);
+    resetBtn.addEventListener("click", resetAllFloors);
 
-  onValue(roomRef, snap => {
-    let data = snap.val() || {};
-    render(data);
-  });
+    renderFloors();
 
-  document.getElementById("status").innerText = "已加入房間";
-};
+    async function joinRoom() {
+      const roomCode = normalizeRoom(roomInput.value);
+      const playerName = nameInput.value.trim();
 
-window.pick = function (num) {
-  let updates = {};
-  updates["platforms/" + num] = { name, id: myId };
-  update(roomRef, updates);
-};
+      if (!roomCode) return setStatus("請先輸入房號。", "warn");
+      if (!playerName) return setStatus("請先輸入你的名稱。", "warn");
 
-window.reset = function () {
-  update(roomRef, {
-    platforms: {1:null,2:null,3:null,4:null}
-  });
-};
+      currentRoom = roomCode;
+      currentName = playerName;
+      localStorage.setItem("rj_name", currentName);
 
-function render(data){
-  let html = "";
-  let platforms = data.platforms || {};
+      history.replaceState({}, "", `${location.pathname}?room=${encodeURIComponent(currentRoom)}`);
 
-  for(let i=1;i<=4;i++){
-    let p = platforms[i];
-    html += `<div class="slot">
-      平台 ${i}： ${p ? p.name : "空"}
-    </div>`;
-  }
+      if (roomRef) off(roomRef);
+      roomRef = ref(db, `rooms/${currentRoom}`);
 
-  document.getElementById("slots").innerHTML = html;
-}
-</script>
+      const snapshot = await get(roomRef);
+      const data = snapshot.val() || emptyState();
 
+      await update(roomRef, {
+        updatedAt: Date.now(),
+        players: {
+          ...(data.players || {}),
+          [deviceId]: {
+            name: currentName,
+            joinedAt: Date.now()
+          }
+        },
+        floors: data.floors || buildEmptyFloors()
+      });
+
+      onValue(roomRef, (snap) => {
+        roomState = snap.val() || emptyState();
+        renderFloors();
+        const onlineCount = Object.keys(roomState.players || {}).length;
+        setStatus(`已連線到房間 ${currentRoom}，目前 ${onlineCount} 人在線。`, "ok");
+      });
+    }
+
+    async function choosePlatform(floor, platform) {
+      if (!roomRef || !currentRoom) {
+        return setStatus("請先加入房間。", "warn");
+      }
+
+      const owner = roomState.floors?.[floor]?.[platform];
+      if (owner && owner.deviceId !== deviceId) {
+        return;
+      }
+
+      const updates = {};
+
+      for (let p = 1; p <= PLATFORM_COUNT; p++) {
+        const item = roomState.floors?.[floor]?.[p];
+        if (item?.deviceId === deviceId) {
+          updates[`floors/${floor}/${p}`] = null;
+        }
+      }
+
+      updates[`floors/${floor}/${platform}`] = {
+        deviceId,
+        name: currentName,
+        selectedAt: Date.now()
+      };
+
+      updates.updatedAt = Date.now();
+
+      await update(roomRef, updates);
+    }
+
+    async function resetAllFloors() {
+      if (!roomRef || !currentRoom) {
+        return setStatus("請先加入房間。", "warn");
+      }
+
+      await update(roomRef, {
+        floors: buildEmptyFloors(),
+        updatedAt: Date.now()
+      });
+
+      setStatus("已重置全部樓層。", "ok");
+    }
+
+    async function leaveRoom() {
+      if (!roomRef || !currentRoom) {
+        return setStatus("目前沒有加入房間。");
+      }
+
+      const updates = {
+        [`players/${deviceId}`]: null,
+        updatedAt: Date.now()
+      };
+
+      for (let floor = 1; floor <= FLOOR_COUNT; floor++) {
+        for (let platform = 1; platform <= PLATFORM_COUNT; platform++) {
+          const item = roomState.floors?.[floor]?.[platform];
+          if (item?.deviceId === deviceId) {
+            updates[`floors/${floor}/${platform}`] = null;
+          }
+        }
+      }
+
+      await update(roomRef, updates);
+      off(roomRef);
+
+      currentRoom = "";
+      roomRef = null;
+      roomState = emptyState();
+      renderFloors();
+      setStatus("已離開房間。");
+    }
+
+    async function copyShareLink() {
+      const roomCode = normalizeRoom(roomInput.value);
+      if (!roomCode) {
+        return setStatus("先輸入房號後才能複製連結。", "warn");
+      }
+
+      const url = `${location.origin}${location.pathname}?room=${encodeURIComponent(roomCode)}`;
+      await navigator.clipboard.writeText(url);
+      setStatus("分享連結已複製。", "ok");
+    }
+
+    function renderFloors() {
+      const floors = roomState.floors || buildEmptyFloors();
+
+      floorsEl.innerHTML = Array.from({ length: FLOOR_COUNT }, (_, i) => {
+        const floor = String(i + 1);
+        const myPlatform = getMyPlatformInFloor(floor);
+
+        const buttons = Array.from({ length: PLATFORM_COUNT }, (_, j) => {
+          const platform = String(j + 1);
+          const item = floors?.[floor]?.[platform];
+          const active = item?.deviceId === deviceId;
+          const blocked = item && item.deviceId !== deviceId;
+
+          return `
+            <button
+              class="platform-btn ${active ? "active" : ""} ${blocked ? "blocked" : ""}"
+              data-floor="${floor}"
+              data-platform="${platform}"
+              ${blocked ? "disabled" : ""}
+            >
+              <div class="platform-num">${platform}</div>
+              <div class="platform-name">${item ? item.name : "可選"}</div>
+            </button>
+          `;
+        }).join("");
+
+        return `
+          <div class="floor">
+            <div class="floor-head">
+              <div class="floor-title">第 ${floor} 層</div>
+              <div class="floor-note">${myPlatform ? `你選的是平台 ${myPlatform}` : "你尚未選擇"}</div>
+            </div>
+            <div class="platform-grid">
+              ${buttons}
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      floorsEl.querySelectorAll(".platform-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          choosePlatform(btn.dataset.floor, btn.dataset.platform);
+        });
+      });
+    }
+
+    function getMyPlatformInFloor(floor) {
+      for (let p = 1; p <= PLATFORM_COUNT; p++) {
+        const item = roomState.floors?.[floor]?.[String(p)];
+        if (item?.deviceId === deviceId) {
+          return String(p);
+        }
+      }
+      return "";
+    }
+
+    function buildEmptyFloors() {
+      const floors = {};
+      for (let floor = 1; floor <= FLOOR_COUNT; floor++) {
+        floors[String(floor)] = {};
+        for (let platform = 1; platform <= PLATFORM_COUNT; platform++) {
+          floors[String(floor)][String(platform)] = null;
+        }
+      }
+      return floors;
+    }
+
+    function emptyState() {
+      return {
+        players: {},
+        floors: buildEmptyFloors()
+      };
+    }
+
+    function normalizeRoom(value) {
+      return value.trim().toUpperCase().replace(/[^A-Z0-9-_]/g, "").slice(0, 24);
+    }
+
+    function setStatus(msg, type = "normal") {
+      statusEl.textContent = msg;
+      statusEl.style.border = "1px solid var(--border)";
+      if (type === "ok") {
+        statusEl.style.border = "1px solid rgba(34,197,94,.5)";
+      } else if (type === "warn") {
+        statusEl.style.border = "1px solid rgba(245,158,11,.5)";
+      }
+    }
+
+    function getOrCreateDeviceId() {
+      let id = localStorage.getItem("rj_device_id");
+      if (!id) {
+        id = crypto.randomUUID();
+        localStorage.setItem("rj_device_id", id);
+      }
+      return id;
+    }
+  </script>
 </body>
 </html>
