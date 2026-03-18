@@ -1,230 +1,653 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>R&J 十層踩台同步工具</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>R&J 十層踩台同步工具</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --panel2: #1f2937;
+      --text: #ffffff;
+      --muted: #cbd5e1;
+      --border: #334155;
+      --green: #22c55e;
+      --greenText: #052e16;
+      --red: #ef4444;
+      --redText: #ffffff;
+      --blueBtn: #334155;
+    }
 
-<style>
-body {
-  margin: 0;
-  font-family: -apple-system, sans-serif;
-  background: #0f172a;
-  color: white;
-}
+    * { box-sizing: border-box; }
 
-.wrap {
-  max-width: 900px;
-  margin: auto;
-  padding: 20px;
-}
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
 
-label {
-  display:block;
-  margin-top:10px;
-  font-weight:bold;
-}
+    .wrap {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 20px;
+    }
 
-input, button {
-  width: 100%;
-  padding: 12px;
-  margin-top: 5px;
-  border-radius: 10px;
-  border: none;
-  font-size: 16px;
-}
+    h1 {
+      margin: 0 0 18px;
+      font-size: 28px;
+      font-weight: 800;
+    }
 
-button { cursor: pointer; }
+    .card {
+      background: rgba(15, 23, 42, 0.92);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 18px;
+      margin-bottom: 18px;
+    }
 
-.primary { background: #22c55e; color: black; }
-.danger { background: #ef4444; }
+    .field-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
 
-.status {
-  margin-top: 10px;
-  padding: 10px;
-  border-radius: 10px;
-  background: #1f2937;
-}
+    .field-row label {
+      width: 64px;
+      min-width: 64px;
+      font-size: 16px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
 
-.floor {
-  margin-top: 15px;
-  padding: 12px;
-  border: 1px solid #334155;
-  border-radius: 12px;
-}
+    .field-row input {
+      flex: 1;
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: #ffffff;
+      color: #111827;
+      font-size: 16px;
+    }
 
-.platform-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  margin-top: 10px;
-}
+    .btn-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 10px;
+    }
 
-.platform-btn {
-  padding: 12px 5px;
-  border-radius: 10px;
-  background: #1f2937;
-  border: 1px solid #334155;
-  text-align: center;
-  font-weight: bold;
-}
+    .btn-row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
 
-/* 自己 */
-.active {
-  background: #22c55e !important;
-  color: black;
-}
+    button {
+      border: none;
+      border-radius: 16px;
+      padding: 16px 14px;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+    }
 
-/* 被別人選 */
-.blocked {
-  background: #ef4444 !important;
-  color: white;
-}
-</style>
+    .btn-join {
+      background: var(--green);
+      color: #111827;
+    }
+
+    .btn-copy {
+      background: var(--blueBtn);
+      color: #fff;
+    }
+
+    .btn-leave {
+      background: transparent;
+      color: #fff;
+      border: 1px solid var(--border);
+    }
+
+    .btn-reset {
+      background: var(--red);
+      color: #fff;
+    }
+
+    .btn-disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .status {
+      margin-top: 14px;
+      background: var(--panel2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 16px;
+      line-height: 1.6;
+      color: var(--text);
+      font-size: 16px;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 14px;
+      margin-top: 8px;
+      line-height: 1.6;
+    }
+
+    .floor {
+      margin-top: 16px;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: rgba(2, 6, 23, 0.35);
+    }
+
+    .floor-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .floor-title {
+      font-size: 20px;
+      font-weight: 800;
+    }
+
+    .floor-note {
+      font-size: 15px;
+      color: var(--muted);
+      text-align: right;
+    }
+
+    .platform-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .platform-btn {
+      min-height: 120px;
+      border-radius: 18px;
+      background: #1e293b;
+      border: 1px solid #40516a;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 10px 6px;
+      font-weight: 800;
+      text-align: center;
+      user-select: none;
+    }
+
+    .platform-num {
+      font-size: 26px;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .platform-name {
+      font-size: 16px;
+      line-height: 1.3;
+      word-break: break-word;
+    }
+
+    .active {
+      background: var(--green) !important;
+      color: var(--greenText) !important;
+      border-color: #86efac !important;
+    }
+
+    .blocked {
+      background: var(--red) !important;
+      color: var(--redText) !important;
+      border-color: #fca5a5 !important;
+    }
+
+    .pill-line {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 640px) {
+      .wrap {
+        padding: 14px;
+      }
+
+      .field-row label {
+        width: 56px;
+        min-width: 56px;
+      }
+
+      .platform-grid {
+        gap: 8px;
+      }
+
+      .platform-btn {
+        min-height: 96px;
+        padding: 8px 4px;
+      }
+
+      .platform-num {
+        font-size: 22px;
+      }
+
+      .platform-name {
+        font-size: 14px;
+      }
+    }
+  </style>
 </head>
-
 <body>
-<div class="wrap">
+  <div class="wrap">
+    <div class="card">
+      <h1>R&J 十層踩台同步工具</h1>
 
-<h2>R&J 十層踩台同步工具</h2>
+      <div class="field-row">
+        <label for="room">房號：</label>
+        <input id="room" placeholder="輸入房號" />
+      </div>
 
-<label>房號：</label>
-<input id="room" placeholder="輸入房號">
+      <div class="field-row">
+        <label for="name">名稱：</label>
+        <input id="name" placeholder="輸入名稱" />
+      </div>
 
-<label>名稱：</label>
-<input id="name" placeholder="輸入名稱">
+      <div class="btn-group">
+        <button class="btn-join" id="joinBtn">加入房間</button>
+        <button class="btn-copy" id="copyBtn">複製分享連結</button>
+      </div>
 
-<button class="primary" onclick="join()">加入房間</button>
-<button class="danger" onclick="resetAll()">重置全部樓層</button>
+      <div class="btn-row-2">
+        <button class="btn-leave" id="leaveBtn">離開房間</button>
+        <button class="btn-reset" id="resetBtn">重置全部樓層</button>
+      </div>
 
-<div id="status" class="status">尚未連線</div>
+      <div id="status" class="status">尚未連線</div>
+      <div class="pill-line">
+        綠色：你目前選的位置<br>
+        紅色：已被其他人選走<br>
+        同一層只會保留你最後選的 1 個平台
+      </div>
+    </div>
 
-<div id="floors"></div>
+    <div class="card">
+      <div id="floors"></div>
+    </div>
+  </div>
 
-</div>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+    import {
+      getDatabase,
+      ref,
+      get,
+      set,
+      update,
+      onValue,
+      onDisconnect,
+      runTransaction
+    } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-database.js";
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
-import {
-  getDatabase,
-  ref,
-  get,
-  update,
-  onValue
-} from "https://www.gstatic.com/firebasejs/11.0.0/firebase-database.js";
+    const firebaseConfig = {
+      apiKey: "AIzaSyDD5QvkwC4O73Slaj4pWYpPAnzcnpGn7l8",
+      authDomain: "rj-tool.firebaseapp.com",
+      databaseURL: "https://rj-tool-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "rj-tool",
+      storageBucket: "rj-tool.firebasestorage.app",
+      messagingSenderId: "330515008066",
+      appId: "1:330515008066:web:870b8118832bc7197fbbdb"
+    };
 
-const firebaseConfig = {
-  apiKey: "AIzaSyDD5QvkwC4O73Slaj4pWYpPAnzcnpGn7l8",
-  authDomain: "rj-tool.firebaseapp.com",
-  databaseURL: "https://rj-tool-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "rj-tool",
-  storageBucket: "rj-tool.firebasestorage.app",
-  messagingSenderId: "330515008066",
-  appId: "1:330515008066:web:870b8118832bc7197fbbdb"
-};
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+    const FLOOR_COUNT = 10;
+    const PLATFORM_COUNT = 4;
 
-let roomRef;
-let myId = localStorage.getItem("id") || crypto.randomUUID();
-localStorage.setItem("id", myId);
+    const roomInput = document.getElementById("room");
+    const nameInput = document.getElementById("name");
+    const joinBtn = document.getElementById("joinBtn");
+    const copyBtn = document.getElementById("copyBtn");
+    const leaveBtn = document.getElementById("leaveBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const statusEl = document.getElementById("status");
+    const floorsEl = document.getElementById("floors");
 
-let state = {};
-let name = "";
-let currentRoom = "";
+    const myId = localStorage.getItem("rj_tool_device_id") || crypto.randomUUID();
+    localStorage.setItem("rj_tool_device_id", myId);
 
-window.join = async function () {
-  currentRoom = document.getElementById("room").value;
-  name = document.getElementById("name").value;
+    let roomCode = "";
+    let myName = "";
+    let roomState = buildEmptyRoomState();
+    let roomRef = null;
+    let listening = false;
 
-  if (!currentRoom || !name) return;
+    const qs = new URLSearchParams(location.search);
+    if (qs.get("room")) roomInput.value = qs.get("room");
+    if (localStorage.getItem("rj_tool_name")) nameInput.value = localStorage.getItem("rj_tool_name");
 
-  roomRef = ref(db, "rooms/" + currentRoom);
+    joinBtn.addEventListener("click", joinRoom);
+    copyBtn.addEventListener("click", copyLink);
+    leaveBtn.addEventListener("click", leaveRoom);
+    resetBtn.addEventListener("click", resetAllFloors);
 
-  const snap = await get(roomRef);
-  const data = snap.val() || { floors: buildEmpty(), players:{} };
-
-  await update(roomRef, {
-    floors: data.floors || buildEmpty(),
-    players: {
-      ...(data.players || {}),
-      [myId]: name
-    }
-  });
-
-  onValue(roomRef, (snap) => {
-    state = snap.val() || {};
     render();
-  });
-};
 
-window.pick = function (floor, platform) {
-  const updates = {};
+    async function joinRoom() {
+      roomCode = normalizeRoom(roomInput.value);
+      myName = nameInput.value.trim();
 
-  for (let i = 1; i <= 4; i++) {
-    if (state.floors?.[floor]?.[i]?.id === myId) {
-      updates[`floors/${floor}/${i}`] = null;
+      if (!roomCode) {
+        setStatus("請先輸入房號");
+        return;
+      }
+      if (!myName) {
+        setStatus("請先輸入名稱");
+        return;
+      }
+
+      localStorage.setItem("rj_tool_name", myName);
+      history.replaceState({}, "", `${location.pathname}?room=${encodeURIComponent(roomCode)}`);
+
+      roomRef = ref(db, `rooms/${roomCode}`);
+
+      const snap = await get(roomRef);
+      const data = snap.val() || buildEmptyRoomState();
+
+      await update(roomRef, {
+        floors: data.floors || buildEmptyFloors(),
+        players: {
+          ...(data.players || {}),
+          [myId]: {
+            name: myName,
+            joinedAt: Date.now()
+          }
+        }
+      });
+
+      await runTransaction(ref(db, `rooms/${roomCode}/hostId`), (current) => {
+        return current || myId;
+      });
+
+      await setupDisconnectCleanup();
+
+      if (!listening) {
+        onValue(roomRef, async (snap) => {
+          roomState = snap.val() || buildEmptyRoomState();
+
+          const players = roomState.players || {};
+          const currentHostId = roomState.hostId || "";
+
+          if (currentHostId && !players[currentHostId]) {
+            const nextHostId = Object.keys(players).sort()[0] || null;
+            if (nextHostId) {
+              await update(roomRef, { hostId: nextHostId });
+            } else {
+              await update(roomRef, { hostId: null });
+            }
+          }
+
+          render();
+        });
+        listening = true;
+      }
+
+      setStatus("已連線");
     }
-  }
 
-  updates[`floors/${floor}/${platform}`] = {
-    name,
-    id: myId
-  };
+    async function setupDisconnectCleanup() {
+      if (!roomCode) return;
 
-  update(roomRef, updates);
-};
+      await onDisconnect(ref(db, `rooms/${roomCode}/players/${myId}`)).remove();
 
-window.resetAll = function () {
-  update(roomRef, {
-    floors: buildEmpty()
-  });
-};
+      for (let floor = 1; floor <= FLOOR_COUNT; floor++) {
+        for (let platform = 1; platform <= PLATFORM_COUNT; platform++) {
+          await onDisconnect(ref(db, `rooms/${roomCode}/floors/${floor}/${platform}`)).remove();
+        }
+      }
 
-function render() {
-  let html = "";
-  const floors = state.floors || buildEmpty();
-
-  for (let f = 1; f <= 10; f++) {
-    html += `<div class="floor"><b>第 ${f} 層</b><div class="platform-grid">`;
-
-    for (let p = 1; p <= 4; p++) {
-      const item = floors?.[f]?.[p];
-      const isMe = item?.id === myId;
-      const blocked = item && !isMe;
-
-      html += `
-        <div 
-          class="platform-btn ${isMe ? "active" : ""} ${blocked ? "blocked" : ""}"
-          onclick="${blocked ? "" : `pick(${f},${p})`}"
-        >
-          ${p}<br>${item ? item.name : ""}
-        </div>
-      `;
+      const hostIdSnap = await get(ref(db, `rooms/${roomCode}/hostId`));
+      if (hostIdSnap.val() === myId) {
+        await onDisconnect(ref(db, `rooms/${roomCode}/hostId`)).remove();
+      }
     }
 
-    html += "</div></div>";
-  }
+    async function pick(floor, platform) {
+      if (!roomRef) {
+        setStatus("請先加入房間");
+        return;
+      }
 
-  document.getElementById("floors").innerHTML = html;
+      const currentSlot = roomState.floors?.[floor]?.[platform];
+      if (currentSlot && currentSlot.id !== myId) return;
 
-  // 🔥 顯示在線玩家
-  const players = state.players || {};
-  const names = Object.values(players);
+      const updates = {};
 
-  document.getElementById("status").innerText =
-    names.length ? "已連線：" + names.join("、") : "尚未連線";
-}
+      for (let i = 1; i <= PLATFORM_COUNT; i++) {
+        const slot = roomState.floors?.[floor]?.[i];
+        if (slot?.id === myId) {
+          updates[`floors/${floor}/${i}`] = null;
+        }
+      }
 
-function buildEmpty() {
-  const obj = {};
-  for (let f = 1; f <= 10; f++) {
-    obj[f] = {1:null,2:null,3:null,4:null};
-  }
-  return obj;
-}
-</script>
+      updates[`floors/${floor}/${platform}`] = {
+        id: myId,
+        name: myName
+      };
 
+      await update(roomRef, updates);
+    }
+
+    async function resetAllFloors() {
+      if (!roomRef) {
+        setStatus("請先加入房間");
+        return;
+      }
+
+      if (!isHost()) {
+        setStatus("只有房主可以重置全部樓層");
+        return;
+      }
+
+      await update(roomRef, {
+        floors: buildEmptyFloors()
+      });
+    }
+
+    async function leaveRoom() {
+      if (!roomRef || !roomCode) {
+        setStatus("目前沒有加入房間");
+        return;
+      }
+
+      const updates = {
+        [`players/${myId}`]: null
+      };
+
+      for (let floor = 1; floor <= FLOOR_COUNT; floor++) {
+        for (let platform = 1; platform <= PLATFORM_COUNT; platform++) {
+          const slot = roomState.floors?.[floor]?.[platform];
+          if (slot?.id === myId) {
+            updates[`floors/${floor}/${platform}`] = null;
+          }
+        }
+      }
+
+      if (roomState.hostId === myId) {
+        const remainingIds = Object.keys(roomState.players || {}).filter(id => id !== myId).sort();
+        updates["hostId"] = remainingIds[0] || null;
+      }
+
+      await update(roomRef, updates);
+
+      roomCode = "";
+      roomRef = null;
+      roomState = buildEmptyRoomState();
+      listening = false;
+      setStatus("已離開房間");
+      render();
+    }
+
+    async function copyLink() {
+      const code = normalizeRoom(roomInput.value);
+      if (!code) {
+        setStatus("先輸入房號才能複製");
+        return;
+      }
+
+      const url = `${location.origin}${location.pathname}?room=${encodeURIComponent(code)}`;
+      await navigator.clipboard.writeText(url);
+      setStatus("分享連結已複製");
+    }
+
+    function render() {
+      renderStatus();
+      renderResetButton();
+      renderFloors();
+    }
+
+    function renderStatus() {
+      if (!roomCode && !Object.keys(roomState.players || {}).length) {
+        statusEl.textContent = "尚未連線";
+        return;
+      }
+
+      const players = roomState.players || {};
+      const hostId = roomState.hostId || "";
+      const names = Object.entries(players).map(([id, player]) => {
+        const n = player?.name || "未命名";
+        return id === hostId ? `${n}（房主）` : n;
+      });
+
+      statusEl.textContent = names.length
+        ? `已連線：${names.join("、")}`
+        : "尚未連線";
+    }
+
+    function renderResetButton() {
+      if (!roomRef) {
+        resetBtn.classList.add("btn-disabled");
+        return;
+      }
+
+      if (isHost()) {
+        resetBtn.classList.remove("btn-disabled");
+        resetBtn.textContent = "重置全部樓層";
+      } else {
+        resetBtn.classList.add("btn-disabled");
+        resetBtn.textContent = "僅房主可重置";
+      }
+    }
+
+    function renderFloors() {
+      const floors = roomState.floors || buildEmptyFloors();
+
+      let html = "";
+
+      for (let floor = 1; floor <= FLOOR_COUNT; floor++) {
+        const myPlatform = getMyPlatformInFloor(floor);
+
+        html += `
+          <div class="floor">
+            <div class="floor-head">
+              <div class="floor-title">第 ${floor} 層</div>
+              <div class="floor-note">${myPlatform ? `你選的是平台 ${myPlatform}` : "你尚未選擇"}</div>
+            </div>
+            <div class="platform-grid">
+        `;
+
+        for (let platform = 1; platform <= PLATFORM_COUNT; platform++) {
+          const item = floors?.[floor]?.[platform];
+          const isMe = item?.id === myId;
+          const blocked = item && item.id !== myId;
+
+          html += `
+            <div
+              class="platform-btn ${isMe ? "active" : ""} ${blocked ? "blocked" : ""}"
+              data-floor="${floor}"
+              data-platform="${platform}"
+            >
+              <div class="platform-num">${platform}</div>
+              <div class="platform-name">${item ? item.name : ""}</div>
+            </div>
+          `;
+        }
+
+        html += `
+            </div>
+          </div>
+        `;
+      }
+
+      floorsEl.innerHTML = html;
+
+      floorsEl.querySelectorAll(".platform-btn").forEach((el) => {
+        const floor = Number(el.dataset.floor);
+        const platform = Number(el.dataset.platform);
+        const slot = roomState.floors?.[floor]?.[platform];
+        const blocked = slot && slot.id !== myId;
+
+        if (!blocked) {
+          el.addEventListener("click", () => pick(floor, platform));
+        }
+      });
+    }
+
+    function getMyPlatformInFloor(floor) {
+      for (let platform = 1; platform <= PLATFORM_COUNT; platform++) {
+        const slot = roomState.floors?.[floor]?.[platform];
+        if (slot?.id === myId) return platform;
+      }
+      return "";
+    }
+
+    function isHost() {
+      return roomState.hostId === myId;
+    }
+
+    function setStatus(text) {
+      statusEl.textContent = text;
+    }
+
+    function normalizeRoom(value) {
+      return (value || "")
+        .trim()
+        .toUpperCase()
+        .replace(/[^A-Z0-9-_]/g, "")
+        .slice(0, 24);
+    }
+
+    function buildEmptyFloors() {
+      const floors = {};
+      for (let f = 1; f <= FLOOR_COUNT; f++) {
+        floors[f] = {};
+        for (let p = 1; p <= PLATFORM_COUNT; p++) {
+          floors[f][p] = null;
+        }
+      }
+      return floors;
+    }
+
+    function buildEmptyRoomState() {
+      return {
+        hostId: null,
+        players: {},
+        floors: buildEmptyFloors()
+      };
+    }
+  </script>
 </body>
 </html>
