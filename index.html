@@ -393,7 +393,6 @@
       get,
       update,
       onValue,
-      onDisconnect,
       runTransaction
     } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-database.js";
 
@@ -505,8 +504,6 @@
 
       await runTransaction(ref(db, `rooms/${roomCode}/hostId`), (current) => current || myId);
 
-      await setupDisconnectCleanup();
-
       if (unsubscribeRoom) {
         unsubscribeRoom();
       }
@@ -527,28 +524,6 @@
       });
 
       setStatus("已連線");
-    }
-
-    async function setupDisconnectCleanup() {
-      if (!roomCode) return;
-
-      await onDisconnect(ref(db, `rooms/${roomCode}/players/${myId}`)).remove();
-
-      for (let floor = 1; floor <= FLOOR_COUNT; floor++) {
-        for (let platform = 1; platform <= PLATFORM_COUNT; platform++) {
-          const slotRef = ref(db, `rooms/${roomCode}/floors/${floor}/${platform}`);
-          const slotSnap = await get(slotRef);
-          const slotValue = slotSnap.val();
-          if (slotValue && slotValue.id === myId) {
-            await onDisconnect(slotRef).remove();
-          }
-        }
-      }
-
-      const hostIdSnap = await get(ref(db, `rooms/${roomCode}/hostId`));
-      if (hostIdSnap.val() === myId) {
-        await onDisconnect(ref(db, `rooms/${roomCode}/hostId`)).remove();
-      }
     }
 
     function getNextRequiredFloor() {
@@ -591,9 +566,6 @@
       };
 
       await update(roomRef, updates);
-
-      const pickedRef = ref(db, `rooms/${roomCode}/floors/${floor}/${platform}`);
-      await onDisconnect(pickedRef).remove();
     }
 
     function openResetConfirm() {
@@ -762,9 +734,7 @@
               data-platform="${platform}"
             >
               <div class="platform-num">${platform}</div>
-              <div class="platform-name">${
-                item ? item.name : (locked ? "未開放" : "")
-              }</div>
+              <div class="platform-name">${item ? item.name : (locked ? "未開放" : "")}</div>
             </div>
           `;
         }
