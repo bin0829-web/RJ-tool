@@ -17,8 +17,6 @@
       --red: #ef4444;
       --red-text: #ffffff;
       --btn-blue: #3b4b66;
-
-      /* 使用者可調整倍率 */
       --scale: 1;
     }
 
@@ -259,6 +257,14 @@
       cursor: not-allowed;
     }
 
+    .locked {
+      background: #475569 !important;
+      color: #cbd5e1 !important;
+      border-color: #64748b !important;
+      cursor: not-allowed;
+      opacity: 0.75;
+    }
+
     .modal-backdrop {
       position: fixed;
       inset: 0;
@@ -359,7 +365,7 @@
       <div class="hint">
         綠色：你目前選的位置<br>
         紅色：已被其他人選走<br>
-        同一層只會保留你最後選的 1 個平台
+        灰色：尚未輪到此層，需依序從第 1 層開始選
       </div>
     </div>
 
@@ -436,7 +442,6 @@
 
     const savedScale = localStorage.getItem("rj_tool_scale") || "100";
     setScale(savedScale);
-
     scaleSlider.value = savedScale;
     scaleValue.textContent = `${savedScale}%`;
 
@@ -546,9 +551,25 @@
       }
     }
 
+    function getNextRequiredFloor() {
+      for (let floor = 1; floor <= FLOOR_COUNT; floor++) {
+        if (!getMyPlatformInFloor(floor)) {
+          return floor;
+        }
+      }
+      return FLOOR_COUNT + 1;
+    }
+
     async function pick(floor, platform) {
       if (!roomRef) {
         setStatus("請先加入房間");
+        return;
+      }
+
+      const nextRequiredFloor = getNextRequiredFloor();
+
+      if (floor > nextRequiredFloor) {
+        setStatus(`請先選第 ${nextRequiredFloor} 層`);
         return;
       }
 
@@ -682,7 +703,14 @@
         return id === hostId ? `${n}（房主）` : n;
       });
 
-      statusEl.textContent = names.length ? `已連線：${names.join("、")}` : "尚未連線";
+      const nextRequiredFloor = getNextRequiredFloor();
+      const progressText = nextRequiredFloor <= FLOOR_COUNT
+        ? `｜下一層：第 ${nextRequiredFloor} 層`
+        : "｜已完成 1~10 層";
+
+      statusEl.textContent = names.length
+        ? `已連線：${names.join("、")} ${progressText}`
+        : "尚未連線";
     }
 
     function renderResetButton() {
@@ -703,16 +731,20 @@
 
     function renderFloors() {
       const floors = roomState.floors || buildEmptyFloors();
+      const nextRequiredFloor = getNextRequiredFloor();
       let html = "";
 
-      for (let floor = 1; floor <= FLOOR_COUNT; floor++) {
+      for (let floor = FLOOR_COUNT; floor >= 1; floor--) {
         const myPlatform = getMyPlatformInFloor(floor);
+        const lockedBySequence = floor > nextRequiredFloor;
 
         html += `
           <div class="floor">
             <div class="floor-head">
               <div class="floor-title">第 ${floor} 層</div>
-              <div class="floor-note">${myPlatform ? `你選 ${myPlatform}` : "未選"}</div>
+              <div class="floor-note">
+                ${myPlatform ? `你選 ${myPlatform}` : (lockedBySequence ? "未開放" : "未選")}
+              </div>
             </div>
             <div class="platform-grid">
         `;
@@ -721,15 +753,18 @@
           const item = floors?.[floor]?.[platform];
           const isMe = item?.id === myId;
           const blocked = item && item.id !== myId;
+          const locked = !item && !isMe && lockedBySequence;
 
           html += `
             <div
-              class="platform-btn ${isMe ? "active" : ""} ${blocked ? "blocked" : ""}"
+              class="platform-btn ${isMe ? "active" : ""} ${blocked ? "blocked" : ""} ${locked ? "locked" : ""}"
               data-floor="${floor}"
               data-platform="${platform}"
             >
               <div class="platform-num">${platform}</div>
-              <div class="platform-name">${item ? item.name : ""}</div>
+              <div class="platform-name">${
+                item ? item.name : (locked ? "未開放" : "")
+              }</div>
             </div>
           `;
         }
@@ -747,8 +782,10 @@
         const platform = Number(el.dataset.platform);
         const slot = roomState.floors?.[floor]?.[platform];
         const blocked = slot && slot.id !== myId;
+        const nextRequiredFloor = getNextRequiredFloor();
+        const lockedBySequence = floor > nextRequiredFloor && !slot;
 
-        if (!blocked) {
+        if (!blocked && !lockedBySequence) {
           el.addEventListener("click", () => pick(floor, platform));
         }
       });
