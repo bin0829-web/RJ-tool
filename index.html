@@ -528,12 +528,21 @@
     }
 
     function getMyPlatformInFloor(floor) {
-      return roomState.selections?.[myId]?.[String(floor)] || "";
+      const floorData = roomState.floors?.[String(floor)] || {};
+      for (let platform = 1; platform <= PLATFORM_COUNT; platform++) {
+        const slot = floorData[String(platform)];
+        if (slot?.id === myId) {
+          return String(platform);
+        }
+      }
+      return "";
     }
 
     function getNextRequiredFloor() {
       for (let floor = 1; floor <= FLOOR_COUNT; floor++) {
-        if (!getMyPlatformInFloor(floor)) return floor;
+        if (!getMyPlatformInFloor(floor)) {
+          return floor;
+        }
       }
       return FLOOR_COUNT + 1;
     }
@@ -576,12 +585,17 @@
           return current;
         }
 
-        const oldPlatform = current.selections[myId][floorKey];
-        if (oldPlatform) {
-          const oldKey = String(oldPlatform);
-          if (current.floors[floorKey]?.[oldKey]?.id === myId) {
-            current.floors[floorKey][oldKey] = null;
+        let oldPlatform = "";
+        for (let i = 1; i <= PLATFORM_COUNT; i++) {
+          const slot = current.floors[floorKey]?.[String(i)];
+          if (slot?.id === myId) {
+            oldPlatform = String(i);
+            break;
           }
+        }
+
+        if (oldPlatform) {
+          current.floors[floorKey][oldPlatform] = null;
         }
 
         current.floors[floorKey][platformKey] = {
