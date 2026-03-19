@@ -17,6 +17,9 @@
       --red: #ef4444;
       --red-text: #ffffff;
       --btn-blue: #3b4b66;
+
+      /* 使用者可調整倍率 */
+      --scale: 1;
     }
 
     * {
@@ -150,11 +153,39 @@
       line-height: 1.45;
     }
 
+    .scale-box {
+      margin-top: 8px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 8px 10px;
+    }
+
+    .scale-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .scale-value {
+      color: #93c5fd;
+      font-weight: 800;
+    }
+
+    .scale-slider {
+      width: 100%;
+      margin: 0;
+    }
+
     .floor {
       border: 1px solid var(--border);
       border-radius: 16px;
-      padding: 8px;
-      margin-bottom: 6px;
+      padding: calc(8px * var(--scale));
+      margin-bottom: calc(6px * var(--scale));
       background: rgba(3, 10, 26, 0.55);
     }
 
@@ -163,17 +194,17 @@
       align-items: center;
       justify-content: space-between;
       gap: 8px;
-      margin-bottom: 6px;
+      margin-bottom: calc(6px * var(--scale));
     }
 
     .floor-title {
-      font-size: 11px;
+      font-size: calc(11px * var(--scale));
       font-weight: 800;
       line-height: 1;
     }
 
     .floor-note {
-      font-size: 10px;
+      font-size: calc(10px * var(--scale));
       color: var(--muted);
       white-space: nowrap;
       line-height: 1;
@@ -182,32 +213,33 @@
     .platform-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 6px;
+      gap: calc(6px * var(--scale));
     }
 
     .platform-btn {
-      min-height: 52px;
-      border-radius: 14px;
+      min-height: calc(52px * var(--scale));
+      border-radius: calc(14px * var(--scale));
       background: #22314c;
       border: 1px solid #42587f;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      padding: 4px 2px;
+      padding: calc(4px * var(--scale)) calc(2px * var(--scale));
       text-align: center;
       user-select: none;
+      cursor: pointer;
     }
 
     .platform-num {
-      font-size: 16px;
+      font-size: calc(16px * var(--scale));
       font-weight: 900;
       line-height: 1;
-      margin-bottom: 4px;
+      margin-bottom: calc(4px * var(--scale));
     }
 
     .platform-name {
-      font-size: 10px;
+      font-size: calc(10px * var(--scale));
       line-height: 1.1;
       font-weight: 800;
       word-break: break-word;
@@ -224,6 +256,7 @@
       background: var(--red) !important;
       color: var(--red-text) !important;
       border-color: #fca5a5 !important;
+      cursor: not-allowed;
     }
 
     .modal-backdrop {
@@ -306,6 +339,22 @@
         <button class="btn-reset" id="resetBtn">重置全部樓層</button>
       </div>
 
+      <div class="scale-box">
+        <div class="scale-head">
+          <span>高度縮放</span>
+          <span class="scale-value" id="scaleValue">100%</span>
+        </div>
+        <input
+          type="range"
+          id="scaleSlider"
+          class="scale-slider"
+          min="60"
+          max="150"
+          step="1"
+          value="100"
+        />
+      </div>
+
       <div id="status" class="status">尚未連線</div>
       <div class="hint">
         綠色：你目前選的位置<br>
@@ -369,6 +418,8 @@
     const confirmModal = document.getElementById("confirmModal");
     const modalCancelBtn = document.getElementById("modalCancelBtn");
     const modalConfirmBtn = document.getElementById("modalConfirmBtn");
+    const scaleSlider = document.getElementById("scaleSlider");
+    const scaleValue = document.getElementById("scaleValue");
 
     const myId = localStorage.getItem("rj_tool_device_id") || crypto.randomUUID();
     localStorage.setItem("rj_tool_device_id", myId);
@@ -383,6 +434,18 @@
     if (qs.get("room")) roomInput.value = qs.get("room");
     if (localStorage.getItem("rj_tool_name")) nameInput.value = localStorage.getItem("rj_tool_name");
 
+    const savedScale = localStorage.getItem("rj_tool_scale") || "100";
+    setScale(savedScale);
+
+    scaleSlider.value = savedScale;
+    scaleValue.textContent = `${savedScale}%`;
+
+    scaleSlider.addEventListener("input", (e) => {
+      const value = e.target.value;
+      setScale(value);
+      localStorage.setItem("rj_tool_scale", value);
+    });
+
     joinBtn.addEventListener("click", joinRoom);
     copyBtn.addEventListener("click", copyLink);
     leaveBtn.addEventListener("click", leaveRoom);
@@ -394,6 +457,13 @@
     });
 
     render();
+
+    function setScale(percent) {
+      const numeric = Math.max(60, Math.min(150, Number(percent)));
+      const scale = numeric / 100;
+      document.documentElement.style.setProperty("--scale", scale);
+      scaleValue.textContent = `${numeric}%`;
+    }
 
     async function joinRoom() {
       roomCode = normalizeRoom(roomInput.value);
