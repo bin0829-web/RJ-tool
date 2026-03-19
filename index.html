@@ -493,12 +493,11 @@
 
       await update(roomRef, {
         floors: data.floors || buildEmptyFloors(),
-        selections: data.selections || {},
         players: {
           ...(data.players || {}),
           [myId]: {
             name: myName,
-            joinedAt: data.players?.[myId]?.joinedAt || Date.now()
+            joinedAt: Date.now()
           }
         }
       });
@@ -527,17 +526,6 @@
       setStatus("已連線");
     }
 
-    function getMyPlatformInFloor(floor) {
-      const floorData = roomState.floors?.[String(floor)] || {};
-      for (let platform = 1; platform <= PLATFORM_COUNT; platform++) {
-        const slot = floorData[String(platform)];
-        if (slot?.id === myId) {
-          return String(platform);
-        }
-      }
-      return "";
-    }
-
     function getNextRequiredFloor() {
       for (let floor = 1; floor <= FLOOR_COUNT; floor++) {
         if (!getMyPlatformInFloor(floor)) {
@@ -554,59 +542,30 @@
       }
 
       const nextRequiredFloor = getNextRequiredFloor();
+
       if (floor > nextRequiredFloor) {
         setStatus(`請先選第 ${nextRequiredFloor} 層`);
         return;
       }
 
-      await runTransaction(roomRef, (current) => {
-        if (!current) current = buildEmptyRoomState();
+      const currentSlot = roomState.floors?.[floor]?.[platform];
+      if (currentSlot && currentSlot.id !== myId) return;
 
-        if (!current.floors) current.floors = buildEmptyFloors();
-        if (!current.players) current.players = {};
-        if (!current.selections) current.selections = {};
+      const updates = {};
 
-        if (!current.players[myId]) {
-          current.players[myId] = {
-            name: myName,
-            joinedAt: Date.now()
-          };
-        } else {
-          current.players[myId].name = myName;
+      for (let i = 1; i <= PLATFORM_COUNT; i++) {
+        const slot = roomState.floors?.[floor]?.[i];
+        if (slot?.id === myId) {
+          updates[`floors/${floor}/${i}`] = null;
         }
+      }
 
-        if (!current.selections[myId]) current.selections[myId] = {};
+      updates[`floors/${floor}/${platform}`] = {
+        id: myId,
+        name: myName
+      };
 
-        const floorKey = String(floor);
-        const platformKey = String(platform);
-
-        const targetSlot = current.floors[floorKey]?.[platformKey];
-        if (targetSlot && targetSlot.id !== myId) {
-          return current;
-        }
-
-        let oldPlatform = "";
-        for (let i = 1; i <= PLATFORM_COUNT; i++) {
-          const slot = current.floors[floorKey]?.[String(i)];
-          if (slot?.id === myId) {
-            oldPlatform = String(i);
-            break;
-          }
-        }
-
-        if (oldPlatform) {
-          current.floors[floorKey][oldPlatform] = null;
-        }
-
-        current.floors[floorKey][platformKey] = {
-          id: myId,
-          name: myName
-        };
-
-        current.selections[myId][floorKey] = platformKey;
-
-        return current;
-      });
+      await update(roomRef, updates);
     }
 
     function openResetConfirm() {
@@ -640,16 +599,8 @@
         return;
       }
 
-      await runTransaction(roomRef, (current) => {
-        if (!current) current = buildEmptyRoomState();
-        current.floors = buildEmptyFloors();
-
-        const playerIds = Object.keys(current.selections || {});
-        for (const pid of playerIds) {
-          current.selections[pid] = {};
-        }
-
-        return current;
+      await update(roomRef, {
+        floors: buildEmptyFloors()
       });
 
       setStatus("已重置全部樓層");
@@ -661,34 +612,25 @@
         return;
       }
 
-      await runTransaction(roomRef, (current) => {
-        if (!current) return current;
+      const updates = {
+        [`players/${myId}`]: null
+      };
 
-        if (!current.players) current.players = {};
-        if (!current.floors) current.floors = buildEmptyFloors();
-        if (!current.selections) current.selections = {};
-
-        for (let floor = 1; floor <= FLOOR_COUNT; floor++) {
-          const floorKey = String(floor);
-          const myPlatform = current.selections?.[myId]?.[floorKey];
-          if (myPlatform) {
-            const platformKey = String(myPlatform);
-            if (current.floors[floorKey]?.[platformKey]?.id === myId) {
-              current.floors[floorKey][platformKey] = null;
-            }
+      for (let floor = 1; floor <= FLOOR_COUNT; floor++) {
+        for (let platform = 1; platform <= PLATFORM_COUNT; platform++) {
+          const slot = roomState.floors?.[floor]?.[platform];
+          if (slot?.id === myId) {
+            updates[`floors/${floor}/${platform}`] = null;
           }
         }
+      }
 
-        delete current.selections[myId];
-        delete current.players[myId];
+      if (roomState.hostId === myId) {
+        const remainingIds = Object.keys(roomState.players || {}).filter(id => id !== myId).sort();
+        updates["hostId"] = remainingIds[0] || null;
+      }
 
-        if (current.hostId === myId) {
-          const remainingIds = Object.keys(current.players).sort();
-          current.hostId = remainingIds[0] || null;
-        }
-
-        return current;
-      });
+      await update(roomRef, updates);
 
       if (unsubscribeRoom) {
         unsubscribeRoom();
@@ -780,7 +722,7 @@
         `;
 
         for (let platform = 1; platform <= PLATFORM_COUNT; platform++) {
-          const item = floors?.[String(floor)]?.[String(platform)];
+          const item = floors?.[floor]?.[platform];
           const isMe = item?.id === myId;
           const blocked = item && item.id !== myId;
           const locked = !item && !isMe && lockedBySequence;
@@ -808,14 +750,23 @@
       floorsEl.querySelectorAll(".platform-btn").forEach((el) => {
         const floor = Number(el.dataset.floor);
         const platform = Number(el.dataset.platform);
-        const slot = roomState.floors?.[String(floor)]?.[String(platform)];
+        const slot = roomState.floors?.[floor]?.[platform];
         const blocked = slot && slot.id !== myId;
-        const lockedBySequence = floor > getNextRequiredFloor() && !slot;
+        const nextRequiredFloor = getNextRequiredFloor();
+        const lockedBySequence = floor > nextRequiredFloor && !slot;
 
         if (!blocked && !lockedBySequence) {
           el.addEventListener("click", () => pick(floor, platform));
         }
       });
+    }
+
+    function getMyPlatformInFloor(floor) {
+      for (let platform = 1; platform <= PLATFORM_COUNT; platform++) {
+        const slot = roomState.floors?.[floor]?.[platform];
+        if (slot?.id === myId) return platform;
+      }
+      return "";
     }
 
     function isHost() {
@@ -837,9 +788,9 @@
     function buildEmptyFloors() {
       const floors = {};
       for (let f = 1; f <= FLOOR_COUNT; f++) {
-        floors[String(f)] = {};
+        floors[f] = {};
         for (let p = 1; p <= PLATFORM_COUNT; p++) {
-          floors[String(f)][String(p)] = null;
+          floors[f][p] = null;
         }
       }
       return floors;
@@ -849,7 +800,6 @@
       return {
         hostId: null,
         players: {},
-        selections: {},
         floors: buildEmptyFloors()
       };
     }
