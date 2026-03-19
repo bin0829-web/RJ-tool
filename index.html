@@ -528,12 +528,14 @@
     }
 
     function getMyPlatformInFloor(floor) {
-      return roomState.selections?.[myId]?.[String(floor)] || "";
+      const floorKey = String(floor);
+      return roomState.selections?.[myId]?.[floorKey] || "";
     }
 
     function getNextRequiredFloor() {
       for (let floor = 1; floor <= FLOOR_COUNT; floor++) {
-        if (!getMyPlatformInFloor(floor)) {
+        const floorKey = String(floor);
+        if (!roomState.selections?.[myId]?.[floorKey]) {
           return floor;
         }
       }
@@ -546,8 +548,15 @@
         return;
       }
 
+      const floorKey = String(floor);
+      const platformKey = String(platform);
+
       const nextRequiredFloor = getNextRequiredFloor();
-      if (floor > nextRequiredFloor) {
+      const myExistingSelection = roomState.selections?.[myId]?.[floorKey] || "";
+      const canEditThisFloor = !!myExistingSelection;
+      const canPickNewFloor = floor === nextRequiredFloor;
+
+      if (!canEditThisFloor && !canPickNewFloor) {
         setStatus(`請先選第 ${nextRequiredFloor} 層`);
         return;
       }
@@ -569,18 +578,15 @@
           current.players[myId].name = myName;
         }
 
-        const floorKey = String(floor);
-        const platformKey = String(platform);
-
-        const existingTarget = current.floors[floorKey][platformKey];
-        if (existingTarget && existingTarget.id !== myId) {
+        const targetSlot = current.floors[floorKey]?.[platformKey];
+        if (targetSlot && targetSlot.id !== myId) {
           return current;
         }
 
         const oldPlatform = current.selections[myId][floorKey];
         if (oldPlatform) {
           const oldKey = String(oldPlatform);
-          if (current.floors[floorKey][oldKey]?.id === myId) {
+          if (current.floors[floorKey]?.[oldKey]?.id === myId) {
             current.floors[floorKey][oldKey] = null;
           }
         }
@@ -750,14 +756,14 @@
       for (let floor = FLOOR_COUNT; floor >= 1; floor--) {
         const floorKey = String(floor);
         const myPlatform = getMyPlatformInFloor(floor);
-        const lockedBySequence = floor > nextRequiredFloor;
+        const floorUnlocked = !!myPlatform || floor === nextRequiredFloor;
 
         html += `
           <div class="floor">
             <div class="floor-head">
               <div class="floor-title">第 ${floor} 層</div>
               <div class="floor-note">
-                ${myPlatform ? `你選 ${myPlatform}` : (lockedBySequence ? "未開放" : "未選")}
+                ${myPlatform ? `你選 ${myPlatform}` : (floorUnlocked ? "未選" : "未開放")}
               </div>
             </div>
             <div class="platform-grid">
@@ -768,7 +774,7 @@
           const item = floors[floorKey]?.[platformKey];
           const isMe = item?.id === myId;
           const blocked = item && item.id !== myId;
-          const locked = !item && !isMe && lockedBySequence;
+          const locked = !item && !isMe && !floorUnlocked;
 
           html += `
             <div
@@ -793,13 +799,14 @@
       floorsEl.querySelectorAll(".platform-btn").forEach((el) => {
         const floor = Number(el.dataset.floor);
         const platform = Number(el.dataset.platform);
+        const floorUnlocked = !!getMyPlatformInFloor(floor) || floor === getNextRequiredFloor();
+
         const floorKey = String(floor);
         const platformKey = String(platform);
         const slot = roomState.floors?.[floorKey]?.[platformKey];
         const blocked = slot && slot.id !== myId;
-        const lockedBySequence = floor > getNextRequiredFloor() && !slot;
 
-        if (!blocked && !lockedBySequence) {
+        if (!blocked && floorUnlocked) {
           el.addEventListener("click", () => pick(floor, platform));
         }
       });
