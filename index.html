@@ -2,63 +2,73 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>R&J 十層踩台同步工具</title>
   <style>
     :root {
-      --bg: #0f172a;
-      --panel: #111827;
-      --panel2: #1f2937;
+      --bg: #08142f;
+      --panel: #091836;
+      --panel-2: #1e2b45;
+      --border: #314868;
       --text: #ffffff;
       --muted: #cbd5e1;
-      --border: #334155;
       --green: #22c55e;
-      --greenText: #052e16;
+      --green-text: #031b0b;
       --red: #ef4444;
-      --redText: #ffffff;
-      --blueBtn: #334155;
+      --red-text: #ffffff;
+      --btn-blue: #3b4b66;
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
 
-    body {
+    html, body {
       margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
+      padding: 0;
       background: var(--bg);
       color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif;
+    }
+
+    body {
+      overflow-x: hidden;
     }
 
     .wrap {
-      max-width: 920px;
+      width: 100%;
+      max-width: 440px;
       margin: 0 auto;
-      padding: 20px;
-    }
-
-    h1 {
-      margin: 0 0 18px;
-      font-size: 28px;
-      font-weight: 800;
+      padding: 8px;
     }
 
     .card {
-      background: rgba(15, 23, 42, 0.92);
+      background: var(--panel);
       border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 18px;
-      margin-bottom: 18px;
+      border-radius: 18px;
+      padding: 10px;
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 18px;
+      line-height: 1.2;
+      font-weight: 800;
     }
 
     .field-row {
       display: flex;
       align-items: center;
-      gap: 10px;
-      margin-bottom: 12px;
+      gap: 6px;
+      margin-bottom: 6px;
     }
 
     .field-row label {
-      width: 64px;
-      min-width: 64px;
-      font-size: 16px;
+      width: 52px;
+      min-width: 52px;
+      font-size: 14px;
       font-weight: 700;
       white-space: nowrap;
     }
@@ -66,33 +76,32 @@
     .field-row input {
       flex: 1;
       width: 100%;
-      padding: 14px 16px;
-      border-radius: 14px;
+      height: 34px;
+      padding: 0 10px;
+      border-radius: 12px;
       border: 1px solid var(--border);
       background: #ffffff;
       color: #111827;
-      font-size: 16px;
+      font-size: 15px;
+      outline: none;
     }
 
-    .btn-group {
+    .btn-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 10px;
+      gap: 6px;
+      margin-top: 6px;
     }
 
-    .btn-row-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 12px;
+    .btn-grid + .btn-grid {
+      margin-top: 6px;
     }
 
     button {
+      height: 38px;
       border: none;
-      border-radius: 16px;
-      padding: 16px 14px;
-      font-size: 16px;
+      border-radius: 14px;
+      font-size: 15px;
       font-weight: 800;
       cursor: pointer;
     }
@@ -103,7 +112,7 @@
     }
 
     .btn-copy {
-      background: var(--blueBtn);
+      background: var(--btn-blue);
       color: #fff;
     }
 
@@ -119,134 +128,156 @@
     }
 
     .btn-disabled {
-      opacity: 0.5;
+      opacity: 0.55;
       cursor: not-allowed;
     }
 
     .status {
-      margin-top: 14px;
-      background: var(--panel2);
+      margin-top: 8px;
+      background: var(--panel-2);
       border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 14px 16px;
-      line-height: 1.6;
-      color: var(--text);
-      font-size: 16px;
+      border-radius: 12px;
+      padding: 8px 10px;
+      font-size: 14px;
+      line-height: 1.45;
+      word-break: break-word;
     }
 
     .hint {
+      margin-top: 6px;
       color: var(--muted);
-      font-size: 14px;
-      margin-top: 8px;
-      line-height: 1.6;
+      font-size: 11px;
+      line-height: 1.45;
     }
 
     .floor {
-      margin-top: 16px;
-      padding: 16px;
       border: 1px solid var(--border);
-      border-radius: 18px;
-      background: rgba(2, 6, 23, 0.35);
+      border-radius: 16px;
+      padding: 8px;
+      margin-bottom: 6px;
+      background: rgba(3, 10, 26, 0.55);
     }
 
     .floor-head {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      gap: 12px;
-      margin-bottom: 12px;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
     }
 
     .floor-title {
-      font-size: 20px;
+      font-size: 11px;
       font-weight: 800;
+      line-height: 1;
     }
 
     .floor-note {
-      font-size: 15px;
+      font-size: 10px;
       color: var(--muted);
-      text-align: right;
+      white-space: nowrap;
+      line-height: 1;
     }
 
     .platform-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
+      gap: 6px;
     }
 
     .platform-btn {
-      min-height: 120px;
-      border-radius: 18px;
-      background: #1e293b;
-      border: 1px solid #40516a;
-      color: white;
+      min-height: 52px;
+      border-radius: 14px;
+      background: #22314c;
+      border: 1px solid #42587f;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      padding: 10px 6px;
-      font-weight: 800;
+      padding: 4px 2px;
       text-align: center;
       user-select: none;
     }
 
     .platform-num {
-      font-size: 26px;
+      font-size: 16px;
+      font-weight: 900;
       line-height: 1;
-      margin-bottom: 8px;
+      margin-bottom: 4px;
     }
 
     .platform-name {
-      font-size: 16px;
-      line-height: 1.3;
+      font-size: 10px;
+      line-height: 1.1;
+      font-weight: 800;
       word-break: break-word;
+      max-width: 100%;
     }
 
     .active {
       background: var(--green) !important;
-      color: var(--greenText) !important;
+      color: var(--green-text) !important;
       border-color: #86efac !important;
     }
 
     .blocked {
       background: var(--red) !important;
-      color: var(--redText) !important;
+      color: var(--red-text) !important;
       border-color: #fca5a5 !important;
     }
 
-    .pill-line {
-      margin-top: 10px;
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.6;
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 9999;
     }
 
-    @media (max-width: 640px) {
-      .wrap {
-        padding: 14px;
-      }
+    .modal-backdrop.show {
+      display: flex;
+    }
 
-      .field-row label {
-        width: 56px;
-        min-width: 56px;
-      }
+    .modal {
+      width: 100%;
+      max-width: 360px;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: 0 20px 40px rgba(0,0,0,.35);
+    }
 
-      .platform-grid {
-        gap: 8px;
-      }
+    .modal-title {
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
 
-      .platform-btn {
-        min-height: 96px;
-        padding: 8px 4px;
-      }
+    .modal-text {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+      margin-bottom: 14px;
+    }
 
-      .platform-num {
-        font-size: 22px;
-      }
+    .modal-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
 
-      .platform-name {
-        font-size: 14px;
-      }
+    .modal-cancel {
+      background: #334155;
+      color: #fff;
+    }
+
+    .modal-confirm {
+      background: var(--red);
+      color: #fff;
     }
   </style>
 </head>
@@ -265,18 +296,18 @@
         <input id="name" placeholder="輸入名稱" />
       </div>
 
-      <div class="btn-group">
+      <div class="btn-grid">
         <button class="btn-join" id="joinBtn">加入房間</button>
         <button class="btn-copy" id="copyBtn">複製分享連結</button>
       </div>
 
-      <div class="btn-row-2">
+      <div class="btn-grid">
         <button class="btn-leave" id="leaveBtn">離開房間</button>
         <button class="btn-reset" id="resetBtn">重置全部樓層</button>
       </div>
 
       <div id="status" class="status">尚未連線</div>
-      <div class="pill-line">
+      <div class="hint">
         綠色：你目前選的位置<br>
         紅色：已被其他人選走<br>
         同一層只會保留你最後選的 1 個平台
@@ -285,6 +316,17 @@
 
     <div class="card">
       <div id="floors"></div>
+    </div>
+  </div>
+
+  <div id="confirmModal" class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-title">確認重置</div>
+      <div class="modal-text">確定要重置全部樓層嗎？此操作會清空 1 到 10 層所有平台分配。</div>
+      <div class="modal-actions">
+        <button class="modal-cancel" id="modalCancelBtn">取消</button>
+        <button class="modal-confirm" id="modalConfirmBtn">確定重置</button>
+      </div>
     </div>
   </div>
 
@@ -324,14 +366,17 @@
     const resetBtn = document.getElementById("resetBtn");
     const statusEl = document.getElementById("status");
     const floorsEl = document.getElementById("floors");
+    const confirmModal = document.getElementById("confirmModal");
+    const modalCancelBtn = document.getElementById("modalCancelBtn");
+    const modalConfirmBtn = document.getElementById("modalConfirmBtn");
 
     const myId = localStorage.getItem("rj_tool_device_id") || crypto.randomUUID();
     localStorage.setItem("rj_tool_device_id", myId);
 
     let roomCode = "";
     let myName = "";
-    let roomState = buildEmptyRoomState();
     let roomRef = null;
+    let roomState = buildEmptyRoomState();
     let unsubscribeRoom = null;
 
     const qs = new URLSearchParams(location.search);
@@ -341,7 +386,12 @@
     joinBtn.addEventListener("click", joinRoom);
     copyBtn.addEventListener("click", copyLink);
     leaveBtn.addEventListener("click", leaveRoom);
-    resetBtn.addEventListener("click", resetAllFloors);
+    resetBtn.addEventListener("click", openResetConfirm);
+    modalCancelBtn.addEventListener("click", closeResetConfirm);
+    modalConfirmBtn.addEventListener("click", confirmResetAllFloors);
+    confirmModal.addEventListener("click", (e) => {
+      if (e.target === confirmModal) closeResetConfirm();
+    });
 
     render();
 
@@ -353,6 +403,7 @@
         setStatus("請先輸入房號");
         return;
       }
+
       if (!myName) {
         setStatus("請先輸入名稱");
         return;
@@ -454,7 +505,7 @@
       await onDisconnect(pickedRef).remove();
     }
 
-    async function resetAllFloors() {
+    function openResetConfirm() {
       if (!roomRef) {
         setStatus("請先加入房間");
         return;
@@ -465,9 +516,23 @@
         return;
       }
 
-      const ok = confirm("確定要重置全部樓層嗎？此操作會清空 1 到 10 層所有平台分配。");
-      if (!ok) {
-        setStatus("已取消重置");
+      confirmModal.classList.add("show");
+    }
+
+    function closeResetConfirm() {
+      confirmModal.classList.remove("show");
+    }
+
+    async function confirmResetAllFloors() {
+      closeResetConfirm();
+
+      if (!roomRef) {
+        setStatus("請先加入房間");
+        return;
+      }
+
+      if (!isHost()) {
+        setStatus("只有房主可以重置全部樓層");
         return;
       }
 
@@ -547,9 +612,7 @@
         return id === hostId ? `${n}（房主）` : n;
       });
 
-      statusEl.textContent = names.length
-        ? `已連線：${names.join("、")}`
-        : "尚未連線";
+      statusEl.textContent = names.length ? `已連線：${names.join("、")}` : "尚未連線";
     }
 
     function renderResetButton() {
@@ -570,7 +633,6 @@
 
     function renderFloors() {
       const floors = roomState.floors || buildEmptyFloors();
-
       let html = "";
 
       for (let floor = 1; floor <= FLOOR_COUNT; floor++) {
@@ -580,7 +642,7 @@
           <div class="floor">
             <div class="floor-head">
               <div class="floor-title">第 ${floor} 層</div>
-              <div class="floor-note">${myPlatform ? `你選的是平台 ${myPlatform}` : "你尚未選擇"}</div>
+              <div class="floor-note">${myPlatform ? `你選 ${myPlatform}` : "未選"}</div>
             </div>
             <div class="platform-grid">
         `;
